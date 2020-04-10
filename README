@@ -1,0 +1,25 @@
+This directory contains bench-marks derived from the glibc testsuite to test
+standard C library functions (memcpy, strcpy, etc) and ad-hoc bench-marks for
+some compiler features. The tests either generate an image suitable for
+running on the simulator or a u-boot image to be run on the target. We only
+generate the test images, execution requires manual effort.
+
+Common options:
+
+NEWLIBDIR=<path to newlib sources>
+
+TARGET=<triplet>,
+	empty assumes native host (x86)
+	else, must define:
+	      TOOLS=<path to toolchain root>
+
+ENDIAN=(EL|EB)		  - default little endian
+
+CORE=<core>		  - overrides -march= option
+
+ABI=(n64|n32|o32) 	  - ABI for MIPS, defaults to p32 for nanoMIPS
+
+SIM=[01]		  - select simulator or u-boot output
+
+
+Make targets are: all clean

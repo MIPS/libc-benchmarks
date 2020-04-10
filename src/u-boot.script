@@ -1,0 +1,18 @@
+dhcp 10.20.2.68:nmips/bench-switch_case5_O2.uImage
+bootm
+dhcp 10.20.2.68:nmips/bench-switch_case6_O2.uImage
+bootm
+dhcp 10.20.2.68:nmips/bench-switch_case7_O2.uImage
+bootm
+dhcp 10.20.2.68:nmips/bench-switch_case8_O2.uImage
+bootm
+dhcp 10.20.2.68:nmips/bench-switch_case9_O2.uImage
+bootm
+dhcp 10.20.2.68:nmips/bench-switch_case10_O2.uImage
+bootm
+dhcp 10.20.2.68:nmips/bench-switch_case11_O2.uImage
+bootm
+dhcp 10.20.2.68:nmips/bench-switch_case12_O2.uImage
+bootm
+dhcp 10.20.2.68:nmips/bench-switch_case13_O2.uImage
+bootm
