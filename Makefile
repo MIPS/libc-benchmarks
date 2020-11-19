@@ -19,26 +19,43 @@ OUTDIR=$(TARGET)
 INC=$(TOOLS)/$(TARGET)/include
 
 ifeq (, $(findstring linux, $(TARGET)))
-INCFLAGS+=-I nmipsinc  \
+ INCFLAGS+=-I nmipsinc  \
 	-I $(TOOLS)/include -I $(TOOLS)/$(TARGET)/include -I $(subst elf,linux-gnu,$(INC))
-SRCCOM=src/gettimeofday.c
-CFLAGS+=-ffreestanding  -gdwarf-2 -msoft-float #-mdsp
-else # linux
-ifneq (, $(findstring nanomips, $(TARGET)))
-CFLAGS+=-static -msoft-float -gdwarf-2
-else
-CFLAGS+=-static -mno-shared -mhard-float -gdwarf-2
-endif
-MIPS_ONLY=$(OUTDIR)/bench-memcpy_def.uImage
-SRCCOM=src/gettimeofday.c
+ SRCCOM=src/gettimeofday.c
+ CFLAGS+=-ffreestanding  -gdwarf-2 #-mdsp
+  ifneq (, $(findstring riscv, $(TARGET)))
+   CFLAGS=-O2 -march=rv64imafdc -mabi=lp64d -mcmodel=medany -ffunction-sections -fdata-sections -Iinclude -DITERATIONS=30000 -DPERFORMANCE_RUN=1 -Iriscv/include -Dwint_t="unsigned long" -gdwarf-2 -save-temps
+   SRCCOM+=riscv/crt.s riscv/setup.c
+  else
+   CFLAGS+=-msoft-float
+  endif
+ else # linux
+ ifneq (, $(findstring nanomips, $(TARGET)))
+  CFLAGS+=-static -msoft-float -gdwarf-2
+ else
+  ifneq (, $(findstring mips, $(TARGET)))
+   CFLAGS+=-static -mno-shared -mhard-float -gdwarf-2
+  endif
+ endif
+ ifneq (, $(findstring riscv, $(TARGET)))
+  RISCV_ONLY=
+  INCFLAGS=
+  CFLAGS+=-static
+ else # riscv
+  MIPS_ONLY=$(OUTDIR)/bench-memcpy_def.uImage
+  INCFLAGS=-I $(TOOLS)/$(TARGET)/include/mips
+ endif # riscv
+ SRCCOM=src/gettimeofday.c
 endif # linux
 
+ifneq (, $(findstring riscv, $(TARGET)))
+RISCV_ONLY=$(OUTDIR)/bench-strcmp_def.uImage
+else
 ifeq ($(ENDIAN),)
-CFLAGS+=-EL
+CFLAGS+=#-EL
 else
 CFLAGS+=-$(ENDIAN)
 endif
-
 ifneq (, $(findstring nanomips, $(TARGET)))
 MIPS_ONLY=$(OUTDIR)/bench-memcpy_def.uImage 	\
 	$(OUTDIR)/bench-memset-large_def.uImage \
@@ -99,8 +116,6 @@ MIPS_ONLY=$(OUTDIR)/bench-memcpy_def.uImage 	\
 	$(OUTDIR)/bench-memcpy_asm.uImage \
 	$(OUTDIR)/bench-strcmp_Os.uImage
 #	$(OUTDIR)/bench-strcmp_asm.uImage
-
-CFLAGS+=
 else # nanomips
 MIPS_ONLY+=$(OUTDIR)/bench-memcpy_def.uImage $(OUTDIR)/bench-memset_def.uImage \
 	$(OUTDIR)/bench-memset-large_def.uImage \
@@ -116,40 +131,53 @@ MIPS_ONLY+=$(OUTDIR)/bench-memcpy_def.uImage $(OUTDIR)/bench-memset_def.uImage \
 #	$(OUTDIR)/bench-strcmp_asm.uImage \
 #	$(OUTDIR)/test-strcmp_asm.uImage \
 #	$(OUTDIR)/bench-strcmp_asm2.uImage
-endif
-endif
+endif # nanomips
+endif # riscv
+endif # ! TARGET
 
+ifeq (, $(findstring riscv, $(TARGET)))
 ifneq (,$(CORE))
 ifeq (i6400,$(CORE))
 CFLAGS+=-march=$(CORE)
 endif # i6400
 CFLAGS+=-mtune=$(CORE)
 endif
+endif # !riscv
 
 ifneq (,$(ARCH))
 CFLAGS+=-march=$(ARCH)
 endif
 
 ifeq (, $(findstring linux, $(TARGET)))
- ifeq ($(ABI),n64)
-  ifeq ($(SIM),1)
-   LDFLAGS=-Tmti64_64.ld
-  else # sim
-   LDFLAGS=-Tuhi64_64.ld
- endif
-else ifeq ($(ABI),n32)
-  ifeq ($(SIM),1)
-   LDFLAGS=-Tmti64_n32.ld
+ ifneq (, $(findstring riscv, $(TARGET)))
+  LDFLAGS=-nostartfiles -nostdlib -static -Wl,--nmagic -Wl,--gc-sections -Lriscv -Triscv/default.lds -lfemto
+ else 
+  ifeq ($(ABI),n64)
+   ifeq ($(SIM),1)
+    LDFLAGS=-Tmti64_64.ld
+   else # sim
+    LDFLAGS=-Tuhi64_64.ld
+   endif
   else
-   LDFLAGS=-Tuhi64_n32.ld
- endif
+   ifeq ($(ABI),n32)
+    ifeq ($(SIM),1)
+     LDFLAGS=-Tmti64_n32.ld
+    else
+     LDFLAGS=-Tuhi64_n32.ld
+    endif
+   endif # ABI=n32
+  endif # ! riscv
+ endif # ! riscv
 else
  ifeq (, $(findstring nanomips, $(TARGET)))
   ifneq ($(TARGET),)
+#LDFLAGS += -Wl,-x
+   ifeq (, $(findstring riscv, $(TARGET)))
     ifeq ($(SIM),1)
      LDFLAGS=-Tmti32.ld
     else
      LDFLAGS=-Tuhi32.ld
+    endif
    endif
   endif
  else
@@ -160,25 +188,24 @@ else
   endif
  endif
 endif
-endif
 
-ifeq ($(ABI),n64)
- CFLAGS+=-mabi=64
-else ifeq ($(ABI),n32)
- CFLAGS+=-mabi=n32
-else
- ifeq (, $(findstring nanomips, $(TARGET)))
-  ifneq ($(TARGET),)
-   CFLAGS+=-mabi=32
+ifeq (, $(findstring riscv, $(TARGET)))
+ ifeq ($(ABI),n64)
+  CFLAGS+=-mabi=64
+ else ifeq ($(ABI),n32)
+  CFLAGS+=-mabi=n32
+ else
+  ifeq (, $(findstring nanomips, $(TARGET)))
+   ifneq ($(TARGET),)
+    CFLAGS+=-mabi=32
+   endif
   endif
  endif
-endif
 
-ifneq ($(SIM),1)
-LDFLAGS += -Wl,--defsym,__memory_size=32M
+ ifneq ($(SIM),1)
+  LDFLAGS += -Wl,--defsym,__memory_size=32M
+ endif
 endif
-
-#LDFLAGS += -Wl,-x
 
 CFLAGS+=-D_POSIX_TIMERS -D_POSIX_CPUTIME -DM_PERTURB=1 $(INCFLAGS) -save-temps -ffunction-sections
 
@@ -187,7 +214,9 @@ CFLAGS+=-D_POSIX_TIMERS -D_POSIX_CPUTIME -DM_PERTURB=1 $(INCFLAGS) -save-temps -
 #BAREMETAL_ONLY=	$(OUTDIR)/bench-strlen-newlib.uImage \
 #	$(OUTDIR)/bench-strcpy-newlib.uImage
 #endif
-
+ifneq (, $(findstring riscv, $(TARGET)))
+BENCHMARKS=$(RISCV_ONLY)
+else
 BENCHMARKS=$(OUTDIR)/bench-memcpy_Os.uImage \
 	$(OUTDIR)/bench-memcpy_O2.uImage \
 	$(OUTDIR)/bench-memset_Os.uImage \
@@ -209,6 +238,7 @@ BENCHMARKS=$(OUTDIR)/bench-memcpy_Os.uImage \
 	$(OUTDIR)/bench-strcpy-mips.uImage \
 	$(OUTDIR)/bench-strcpy-musl.uImage \
 	$(BAREMETAL_ONLY)
+endif # ! riscv
 
 .PRECIOUS: ${BENCHMARKS:.uImage=.elf}
 
@@ -262,10 +292,13 @@ endif
 $(OUTDIR):
 	mkdir $@
 
+ifeq (, $(findstring riscv, $(TARGET)))
 INCM=$(subst linux-gnu,elf,$(TOOLS)/$(TARGET)/include/mips)
+INCFLAGS=-I$(TOOLS)/$(TARGET)/include/mips
+endif
 
 %.o: src/%.S
-	$(CC) $(CFLAGS) -c -I $(TOOLS)/$(TARGET)/include/mips -I $(INCM) $^ -o $@
+	$(CC) $(CFLAGS) -c $(INCFLAGS) -I $(INCM) $^ -o $@
 
 %_Os.o: $(NEWLIBDIR)/%.c
 	$(CC) $(CFLAGS) -Os -c $^ -o $@
@@ -281,19 +314,19 @@ INCM=$(subst linux-gnu,elf,$(TOOLS)/$(TARGET)/include/mips)
 
 
 strcmp_asm2.o: $(NEWLIBDIR)/strcmp.S
-	$(CC)  $(CFLAGS) -O2 -c -I $(TOOLS)/$(TARGET)/include/mips  -I $(INCM) $^ -o $@
+	$(CC)  $(CFLAGS) -O2 -c $(INCFLAGS) -I $(INCM) $^ -o $@
 
 strcmp_asm.o: src/strcmp_asm.S
-	$(CC)  $(CFLAGS) -Os -c -I $(TOOLS)/$(TARGET)/include/mips  -I $(INCM) $^ -o $@
+	$(CC)  $(CFLAGS) -Os -c $(INCFLAGS) -I $(INCM) $^ -o $@
 
 %_asm.o: src/%-asm.s
-	$(CC) $(CFLAGS) -c -I $(TOOLS)/$(TARGET)/include/mips  -I $(INCM) $^ -o $@
+	$(CC) $(CFLAGS) -c $(INCFLAGS) -I $(INCM) $^ -o $@
 
 %_asm.o: $(NEWLIBDIR)/%.S
-	$(CC) $(CFLAGS) -c -I $(TOOLS)/$(TARGET)/include/mips  -I $(INCM) $^ -o $@
+	$(CC) $(CFLAGS) -c $(INCFLAGS) -I $(INCM) $^ -o $@
 
 %_asm.o: $(NEWLIBDIR)/%.S
-	$(CC) $(CFLAGS) -c -I $(TOOLS)/$(TARGET)/include/mips  -I $(INCM) $^ -o $@
+	$(CC) $(CFLAGS) -c $(INCFLAGS) -I $(INCM) $^ -o $@
 
 $(OUTDIR)/bench-%_asm.elf: src/bench-%.c %_asm.o $(SRCCOM)
 	$(CC) $(CFLAGS) -Os $^ -o $@  $(LDFLAGS)
@@ -324,7 +357,7 @@ $(OUTDIR)/bench-switch_case16_O2.elf:CFLAGS+= -falign-functions=32 --param case-
 $(OUTDIR)/bench-switch_case17_O2.elf:CFLAGS+= -falign-functions=32 --param case-values-threshold=17
 $(OUTDIR)/bench-switch_case18_O2.elf:CFLAGS+= -falign-functions=32 --param case-values-threshold=18
 $(OUTDIR)/bench-switch_case3_Os.elf:CFLAGS+= -falign-functions=32 --param case-values-threshold=3
-$(OUTDIR)/bench-switch_case4_Os.eyyyyyylf:CFLAGS+= -falign-functions=32 --param case-values-threshold=4
+$(OUTDIR)/bench-switch_case4_Os.elf:CFLAGS+= -falign-functions=32 --param case-values-threshold=4
 $(OUTDIR)/bench-switch_case5_Os.elf:CFLAGS+= -falign-functions=32 --param case-values-threshold=5
 $(OUTDIR)/bench-switch_case6_Os.elf:CFLAGS+= -falign-functions=32 --param case-values-threshold=6
 $(OUTDIR)/bench-switch_case7_Os.elf:CFLAGS+= -falign-functions=32 --param case-values-threshold=7

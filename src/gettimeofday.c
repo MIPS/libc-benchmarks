@@ -19,8 +19,13 @@
 #include <time.h>
 #include <sys/time.h>
 
-#if (__mips_isa_rev >= 2)
-#define read_CCRes()			\
+#ifdef __riscv
+#  define read_CCRes() 1
+#  define read_Count() ({ unsigned long __tmp; \
+       __asm__ volatile("csrr %0, mcycle" : "=r"(__tmp)); \
+       __tmp; })
+#elif (__mips_isa_rev >= 2)
+#  define read_CCRes()			\
 ({ int __ccres;				\
 	__asm__ __volatile__(		\
 	"rdhwr\t%0,$3\n\t"		\
@@ -28,16 +33,16 @@
 	__ccres;			\
 })
 
-#define read_Count()			\
+#  define read_Count()			\
 ({ int __count;				\
 	__asm__ __volatile__(		\
 	"rdhwr\t%0,$2\n\t"		\
 	: "=r" (__count));		\
 	__count;			\
 })
-#else
-#define read_CCRes() 0
-#define read_Count() 0
+# else
+#  define read_CCRes() 0
+#  define read_Count() 0
 #endif
 
 #ifndef FREQ_MHZ
