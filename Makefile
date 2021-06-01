@@ -96,8 +96,8 @@ MIPS_ONLY=$(OUTDIR)/bench-memcpy_def.uImage 	\
 	$(OUTDIR)/bench-strlen-mips4-dsp.uImage \
 	$(OUTDIR)/bench-strcpy-mips-dsp.uImage \
 	$(OUTDIR)/bench-memset_def.uImage \
-	$(OUTDIR)/bench-memcpy_asm.uImage \
 	$(OUTDIR)/bench-strcmp_Os.uImage
+#	$(OUTDIR)/bench-memcpy_asm.uImage \
 #	$(OUTDIR)/bench-strcmp_asm.uImage
 
 CFLAGS+=
@@ -264,21 +264,20 @@ $(OUTDIR):
 
 INCM=$(subst linux-gnu,elf,$(TOOLS)/$(TARGET)/include/mips)
 
+%_Os.o: src/%-c.c
+	$(CC) $(CFLAGS) -Os -c $^ -o $@
+
+%_O2.o: src/%-c.c
+	$(CC) $(CFLAGS) -O2 -c $^ -o $@
+
 %.o: src/%.S
 	$(CC) $(CFLAGS) -c -I $(TOOLS)/$(TARGET)/include/mips -I $(INCM) $^ -o $@
 
 %_Os.o: $(NEWLIBDIR)/%.c
 	$(CC) $(CFLAGS) -Os -c $^ -o $@
 
-%_Os.o: src/%-c.c
-	$(CC) $(CFLAGS) -Os -c $^ -o $@
-
 %_O2.o: $(NEWLIBDIR)/%.c
 	$(CC) $(CFLAGS) -O2 -c $^ -o $@
-
-%_O2.o: src/%-c.c
-	$(CC) $(CFLAGS) -O2 -c $^ -o $@
-
 
 strcmp_asm2.o: $(NEWLIBDIR)/strcmp.S
 	$(CC)  $(CFLAGS) -O2 -c -I $(TOOLS)/$(TARGET)/include/mips  -I $(INCM) $^ -o $@
