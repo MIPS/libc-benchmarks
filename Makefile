@@ -208,6 +208,26 @@ BENCHMARKS=$(OUTDIR)/bench-memcpy_Os.uImage \
 	$(OUTDIR)/bench-strcpy.uImage \
 	$(OUTDIR)/bench-strcpy-mips.uImage \
 	$(OUTDIR)/bench-strcpy-musl.uImage \
+	$(OUTDIR)/bench-memcpy-gcc32b_Os.uImage \
+	$(OUTDIR)/bench-memcpy-loop32b_Os.uImage \
+	$(OUTDIR)/bench-memcpy-4a-256b_Os.uImage \
+	$(OUTDIR)/bench-memcpy-4a-256b-nopre_Os.uImage \
+	$(OUTDIR)/bench-memcpy-4a-32k_Os.uImage \
+	$(OUTDIR)/bench-memcpy-4a-32k-nopre_Os.uImage \
+	$(OUTDIR)/bench-memcpy-4a-large_Os.uImage \
+	$(OUTDIR)/bench-memcpy-4a-large-nopre_Os.uImage \
+	$(OUTDIR)/bench-memcpy-16a-256b_Os.uImage \
+	$(OUTDIR)/bench-memcpy-16a-256b-nopre_Os.uImage \
+	$(OUTDIR)/bench-memcpy-16a-32k_Os.uImage \
+	$(OUTDIR)/bench-memcpy-16a-32k-nopre_Os.uImage \
+	$(OUTDIR)/bench-memcpy-16a-large_Os.uImage \
+	$(OUTDIR)/bench-memcpy-16a-large-nopre_Os.uImage \
+	$(OUTDIR)/bench-memcpy-32a-256b_Os.uImage \
+	$(OUTDIR)/bench-memcpy-32a-256b-nopre_Os.uImage \
+	$(OUTDIR)/bench-memcpy-32a-32k_Os.uImage \
+	$(OUTDIR)/bench-memcpy-32a-32k-nopre_Os.uImage \
+	$(OUTDIR)/bench-memcpy-32a-large_Os.uImage \
+	$(OUTDIR)/bench-memcpy-32a-large-nopre_Os.uImage \
 	$(BAREMETAL_ONLY)
 
 .PRECIOUS: ${BENCHMARKS:.uImage=.elf}

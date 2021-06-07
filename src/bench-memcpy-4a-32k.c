@@ -20,6 +20,6 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#define SCOND(L) 1
+#define SCOND(S) ((S) <= 32*1024)
 
-#include "bench-memcpy-common.c"
+#include "bench-memcpy-4a-256b.c"

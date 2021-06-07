@@ -20,6 +20,12 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#define SCOND(L) 1
+#ifndef SCOND
+#define SCOND(S) ((S) <= 256)
+#endif
+
+#ifndef ACOND
+#define ACOND(A1,A2,A3) (((A1) != 0) && ((A1) % 16 == 0) && ((A2) != 0) && ((A2) % 16 == 0) && ((A3) >= 16) && ((A3) % 16 == 0))
+#endif
 
 #include "bench-memcpy-common.c"
